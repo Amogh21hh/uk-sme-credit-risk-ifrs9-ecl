@@ -1,0 +1,9 @@
+metric,value
+AUC_train,0.7699
+AUC_test,0.7696
+Gini_test,0.5392
+KS_test,0.418
+Long_run_default_rate,0.1705
+Total_EAD_GBPm,973.4111
+Total_ECL_GBPm,203.5968
+Coverage_pct,20.9158

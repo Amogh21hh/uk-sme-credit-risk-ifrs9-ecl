@@ -1,0 +1,11 @@
+variable,iv,strength
+interest_coverage,0.9821841425568996,Very Strong
+leverage,0.9628120850223957,Very Strong
+bureau_score,0.056179225374646216,Weak
+days_past_due,0.05097798606399291,Weak
+sector,0.02366372697147093,Weak
+ltv,0.012430046208639463,Useless
+secured,0.010169541336016859,Useless
+loan_amount_gbp,0.0066565166022705315,Useless
+years_trading,0.005035818886353614,Useless
+term_months,0.0044031250141666955,Useless

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UK SME Portfolio – IFRS 9 ECL Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  body{font-family:'Segoe UI',Roboto,Arial,sans-serif;background:#f4f6f9;margin:0;padding:0;color:#1a2332;}
+  .hdr{background:linear-gradient(135deg,#1f4e79 0%,#2e5d8f 100%);color:#fff;padding:28px 40px;}
+  .hdr h1{margin:0;font-size:28px;font-weight:600;}
+  .hdr p{margin:6px 0 0;opacity:.9;font-size:14px;}
+  .container{max-width:1400px;margin:0 auto;padding:24px 40px;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+  .kpi{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-left:4px solid #1f4e79;}
+  .kpi .lbl{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#6c7a89;font-weight:600;}
+  .kpi .val{font-size:26px;font-weight:700;color:#1f4e79;margin-top:6px;}
+  .kpi .sub{font-size:11px;color:#9aa5b1;margin-top:4px;}
+  .card{background:#fff;border-radius:10px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:24px;}
+  .card h2{margin:0 0 16px;font-size:17px;color:#1f4e79;font-weight:600;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;padding:8px 10px;background:#eef3f8;color:#1f4e79;font-weight:600;border-bottom:2px solid #d6dde4;}
+  td{padding:8px 10px;border-bottom:1px solid #eef0f3;}
+  tr:hover td{background:#f8fafc;}
+  .stage1{color:#2e7d32;font-weight:600;}
+  .stage2{color:#f9a825;font-weight:600;}
+  .stage3{color:#c62828;font-weight:600;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .b1{background:#c6efce;color:#1b5e20;}.b2{background:#fff3cd;color:#856404;}.b3{background:#f8d7da;color:#721c24;}
+  .footer{text-align:center;color:#9aa5b1;font-size:12px;padding:20px;}
+  .right{text-align:right;}
+  .chart-wrap{position:relative;height:280px;}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <h1>UK SME Credit Risk Portfolio – IFRS 9 ECL Dashboard</h1>
+  <p>Synthetic 10,000-loan UK SME book · Logistic PD model + 3-scenario macro overlay · Reporting date: 31-Mar-2026</p>
+</div>
+
+<div class="container">
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="lbl">Portfolio EAD</div><div class="val" id="k-ead"></div><div class="sub">Exposure at default</div></div>
+    <div class="kpi"><div class="lbl">Weighted ECL</div><div class="val" id="k-ecl"></div><div class="sub">3-scenario probability-weighted</div></div>
+    <div class="kpi"><div class="lbl">Coverage Ratio</div><div class="val" id="k-cov"></div><div class="sub">ECL / EAD</div></div>
+    <div class="kpi"><div class="lbl">Average 12m PD</div><div class="val" id="k-pd"></div><div class="sub">Calibrated to long-run DR</div></div>
+    <div class="kpi" style="border-left-color:#2e7d32"><div class="lbl">Model AUC</div><div class="val" id="k-auc"></div><div class="sub">Test set – discrimination</div></div>
+    <div class="kpi" style="border-left-color:#2e7d32"><div class="lbl">Gini Coefficient</div><div class="val" id="k-gini"></div><div class="sub">2 × AUC − 1</div></div>
+    <div class="kpi" style="border-left-color:#2e7d32"><div class="lbl">KS Statistic</div><div class="val" id="k-ks"></div><div class="sub">Max(TPR − FPR)</div></div>
+    <div class="kpi" style="border-left-color:#c62828"><div class="lbl">Realised DR</div><div class="val" id="k-dr"></div><div class="sub">Observed 12-month default rate</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>ECL by IFRS 9 Stage (GBP m)</h2>
+      <div class="chart-wrap"><canvas id="ch_stage"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Stage Composition – Loan Count</h2>
+      <div class="chart-wrap"><canvas id="ch_stage_pie"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Stage Summary Table</h2>
+    <table id="t_stage">
+      <thead><tr><th>Stage</th><th class="right">Loans</th><th class="right">EAD (GBP m)</th><th class="right">ECL (GBP m)</th><th class="right">Coverage</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>ECL by Sector – Top Contributors</h2>
+    <div class="chart-wrap" style="height:340px"><canvas id="ch_sector"></canvas></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>Sector View – Risk Indicators</h2>
+      <table id="t_sector">
+        <thead><tr><th>Sector</th><th class="right">Avg PD</th><th class="right">Default Rate</th><th class="right">Coverage</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>PD Distribution – Loan Count</h2>
+      <div class="chart-wrap"><canvas id="ch_pd"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Scenario Sensitivity – Unweighted ECL (GBP m)</h2>
+    <div class="chart-wrap"><canvas id="ch_scn"></canvas></div>
+    <p style="font-size:12.5px;color:#6c7a89;margin:10px 0 0;">
+      Macro overlay applies PD and LGD multipliers under three forward-looking scenarios.
+      Final ECL is the probability-weighted average – this is the IFRS 9 reporting figure.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Methodology Summary</h2>
+    <p style="font-size:13.5px;line-height:1.65;color:#374151;margin:0;">
+      <b>PD model:</b> Logistic regression on WoE-transformed features (leverage, interest coverage, bureau score, sector, DPD, secured flag, years trading).
+      Model selected via Information Value screening – leverage and interest coverage carry the strongest predictive power, consistent with PRA expectations for SME models.
+      <br><br>
+      <b>IFRS 9 staging:</b> Stage 1 = performing (12-month ECL); Stage 2 = SICR triggered (lifetime ECL); Stage 3 = credit-impaired (lifetime ECL). SICR proxies: PD &gt; 15% or DPD ≥ 30.
+      <br><br>
+      <b>Forward-looking overlay:</b> ECL = Σ wᵢ · PDᵢ · LGDᵢ · EAD across Upside / Base / Downside scenarios. Scenario weights and multipliers are user-editable in the Excel model.
+      <br><br>
+      <b>Validation:</b> AUC, Gini, KS on a stratified hold-out; PSI to confirm population stability between train and test.
+    </p>
+  </div>
+
+</div>
+<div class="footer">UK SME Credit Risk &amp; IFRS 9 ECL Model · Amogh H. H. · Methodology aligned with PRA SS3/17 and IFRS 9 paragraphs 5.5</div>
+
+<script>
+const D = {"kpi": {"loans": 10000, "ead_m": 973.4, "ecl_m": 203.6, "coverage": 20.92, "auc": 0.77, "gini": 0.539, "ks": 0.418, "avg_pd": 17.05, "default_rate": 17.05}, "stage_labels": ["Stage 1", "Stage 2", "Stage 3"], "stage_ead": [341.1, 454.24, 178.07], "stage_ecl": [13.34, 134.22, 56.04], "stage_loans": [3832, 4416, 1752], "stage_cov": [3.91, 29.55, 31.47], "sector_labels": ["Retail", "Hospitality", "Transport", "Real Estate", "Technology", "Construction", "Wholesale", "Manufacturing", "Professional Services", "Healthcare"], "sector_ecl": [24.07, 22.58, 22.27, 21.12, 20.78, 20.72, 20.11, 19.62, 16.86, 15.47], "sector_cov": [23.15, 22.45, 21.1, 21.33, 21.28, 21.17, 21.18, 21.03, 19.0, 16.84], "sector_pd": [18.1, 19.06, 17.36, 17.42, 16.7, 17.19, 17.57, 16.52, 15.87, 14.58], "sector_dr": [17.96, 20.0, 17.08, 16.57, 17.22, 20.87, 17.57, 15.59, 14.05, 13.54], "pd_bands": ["0-2%", "2-5%", "5-10%", "10-15%", "15-20%", "20-30%", "30-50%", "50%+"], "pd_band_loans": [685, 339, 990, 2145, 2839, 2308, 544, 150], "pd_band_ecl": [0.14, 0.53, 3.6, 13.41, 66.82, 87.22, 23.83, 8.05], "scenarios": [{"name": "Upside", "weight": 20, "ecl_m": 146.55}, {"name": "Base", "weight": 55, "ecl_m": 181.49}, {"name": "Downside", "weight": 25, "ecl_m": 297.86}]};
+const fmt = n => n.toLocaleString('en-GB',{maximumFractionDigits:2});
+
+document.getElementById('k-ead').textContent  = "GBP " + fmt(D.kpi.ead_m) + "m";
+document.getElementById('k-ecl').textContent  = "GBP " + fmt(D.kpi.ecl_m) + "m";
+document.getElementById('k-cov').textContent  = D.kpi.coverage.toFixed(2) + "%";
+document.getElementById('k-pd').textContent   = D.kpi.avg_pd.toFixed(2) + "%";
+document.getElementById('k-auc').textContent  = D.kpi.auc.toFixed(3);
+document.getElementById('k-gini').textContent = D.kpi.gini.toFixed(3);
+document.getElementById('k-ks').textContent   = D.kpi.ks.toFixed(3);
+document.getElementById('k-dr').textContent   = D.kpi.default_rate.toFixed(2) + "%";
+
+const stageColors=['#2e7d32','#f9a825','#c62828'];
+
+new Chart(document.getElementById('ch_stage'),{
+  type:'bar',
+  data:{labels:D.stage_labels, datasets:[
+    {label:'EAD (GBP m)',data:D.stage_ead,backgroundColor:'#9ab5d1'},
+    {label:'ECL (GBP m)',data:D.stage_ecl,backgroundColor:'#1f4e79'},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}
+});
+
+new Chart(document.getElementById('ch_stage_pie'),{
+  type:'doughnut',
+  data:{labels:D.stage_labels, datasets:[{data:D.stage_loans, backgroundColor:stageColors}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right'}}}
+});
+
+new Chart(document.getElementById('ch_sector'),{
+  type:'bar',
+  data:{labels:D.sector_labels, datasets:[
+    {label:'ECL (GBP m)',     data:D.sector_ecl, backgroundColor:'#1f4e79', yAxisID:'y'},
+    {label:'Coverage %',      data:D.sector_cov, backgroundColor:'#e07b39', yAxisID:'y1', type:'line', borderColor:'#e07b39', tension:.3},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},
+    scales:{y:{position:'left',title:{display:true,text:'ECL GBP m'}},
+            y1:{position:'right',title:{display:true,text:'Coverage %'},grid:{drawOnChartArea:false}}}}
+});
+
+new Chart(document.getElementById('ch_pd'),{
+  type:'bar',
+  data:{labels:D.pd_bands, datasets:[{label:'Loans', data:D.pd_band_loans, backgroundColor:'#1f4e79'}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+});
+
+new Chart(document.getElementById('ch_scn'),{
+  type:'bar',
+  data:{labels:D.scenarios.map(s=>s.name+' ('+s.weight+'%)'),
+        datasets:[{label:'Unweighted ECL GBP m',data:D.scenarios.map(s=>s.ecl_m),
+        backgroundColor:['#2e7d32','#1f4e79','#c62828']}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+});
+
+// Tables
+const tStage = document.querySelector('#t_stage tbody');
+D.stage_labels.forEach((s,i)=>{
+  const cls = 'stage'+(i+1);
+  const badge = 'b'+(i+1);
+  tStage.innerHTML += `<tr>
+    <td><span class="badge ${badge}">${s}</span></td>
+    <td class="right">${fmt(D.stage_loans[i])}</td>
+    <td class="right">${fmt(D.stage_ead[i])}</td>
+    <td class="right">${fmt(D.stage_ecl[i])}</td>
+    <td class="right ${cls}">${D.stage_cov[i].toFixed(2)}%</td>
+  </tr>`;
+});
+
+const tSec = document.querySelector('#t_sector tbody');
+D.sector_labels.forEach((s,i)=>{
+  tSec.innerHTML += `<tr>
+    <td>${s}</td>
+    <td class="right">${D.sector_pd[i].toFixed(2)}%</td>
+    <td class="right">${D.sector_dr[i].toFixed(2)}%</td>
+    <td class="right">${D.sector_cov[i].toFixed(2)}%</td>
+  </tr>`;
+});
+</script>
+</body>
+</html>
